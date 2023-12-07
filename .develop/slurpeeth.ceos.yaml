@@ -1,0 +1,18 @@
+---
+segments:
+  ceos1-eth1-to-ceos2-eth1:
+    interface: ceos1-eth1
+    listen:
+      address: 127.0.0.1
+      port: 5001
+    send:
+      address: 127.0.0.1
+      port: 5002
+  ceos2-eth1-to-ceos1-eth1:
+    interface: ceos2-eth1
+    listen:
+      address: 127.0.0.1
+      port: 5002
+    send:
+      address: 127.0.0.1
+      port: 5001

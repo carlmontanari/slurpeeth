@@ -1,0 +1,142 @@
+linters-settings:
+  funlen:
+    lines: 150
+    statements: 50
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - experimental
+      - opinionated
+      - performance
+      - style
+    disabled-checks:
+      - whyNoLint
+  gocyclo:
+    min-complexity: 15
+  importas:
+    no-unaliased: true
+    alias:
+      - pkg: github.com/carlmontanari/slurpeeth/slurpeeth
+        alias: ""
+      - pkg: github.com/carlmontanari/slurpeeth/(\w+)
+        alias: slurpeeth$1
+      - pkg: github.com/carlmontanari/slurpeeth/(\w+)/(\w+)
+        alias: slurpeeth$1$2
+  lll:
+    line-length: 100
+    tab-width: 4
+  stylecheck:
+    checks:
+      - "-ST1000"
+
+linters:
+  enable:
+    - asciicheck
+    - bodyclose
+    - decorder
+    - dogsled
+    - dupl
+    - dupword
+    - durationcheck
+    - errcheck
+    - errchkjson
+    - errname
+    - errorlint
+    - exhaustive
+    - exportloopref
+    - forbidigo
+    - forcetypeassert
+    - funlen
+    - gocheckcompilerdirectives
+    - gochecknoglobals
+    - gochecknoinits
+    - gochecksumtype
+    - gocognit
+    - goconst
+    - gocritic
+    - gocyclo
+    - godot
+    - godox
+    - goerr113
+    - gofmt
+    - gofumpt
+    - goimports
+    - gomnd
+    - goprintffuncname
+    - gosec
+    - gosimple
+    - govet
+    - grouper
+    - importas
+    - ineffassign
+    - inamedparam
+    - lll
+    - maintidx
+    - makezero
+    - misspell
+    - nakedret
+    - nestif
+    - nilerr
+    - nilnil
+    - nlreturn
+    - noctx
+    - nolintlint
+    - perfsprint
+    - prealloc
+    - predeclared
+    - reassign
+    - revive
+    - staticcheck
+    - stylecheck
+    - tenv
+    - testpackage
+    - thelper
+    - tparallel
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+    - usestdlibvars
+    - wastedassign
+    - whitespace
+    - wsl
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  # https://github.com/golangci/golangci-lint/issues/2439#issuecomment-1002912465
+  exclude-use-default: false
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - gomnd
+        - dupl
+        - structcheck
+        - unused
+        - unparam
+        - maintidx
+        - funlen
+        - gochecknoglobals
+        - lll
+
+    # ignore package comments complaints in revive
+    - linters:
+        - revive
+      text: "package-comments"
+
+    # TODO -- temp
+    - linters:
+        - forbidigo
+      text: "use of `fmt.Println` forbidden by pattern"
+
+run:
+  go: '1.21'
+  skip-dirs:
+    - .private
+  timeout: 5m
+
+output:
+  uniq-by-line: false
+
+service:
+  golangci-lint-version: 1.55.x

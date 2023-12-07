@@ -1,0 +1,48 @@
+---
+version: v2beta1
+name: slurpeeth
+
+vars:
+  DEVSPACE_FLAGS: "-n slurpeeth"
+
+  REGISTRY:
+    source: env
+    default: ghcr.io/srl-labs/clabernetes
+
+  PULL_POLICY: IfNotPresent
+
+  DEV_IMAGE: ${REGISTRY}/slurpeeth-dev
+
+localRegistry:
+  enabled: false
+
+images:
+  slurpeeth-dev:
+    createPullSecret: false
+    image: ${DEV_IMAGE}
+    context: ../
+    dockerfile: dev.Dockerfile
+    rebuildStrategy: ignoreContextChanges
+    tags:
+      - $(git describe --always --abbrev=8)
+
+deployments:
+  slurpeeth:
+    kubectl:
+      manifests:
+        - manifest.yaml
+
+dev:
+  slurpeeth:
+    labelSelector:
+      slurpeeth: slurpeeth
+    container: slurpeeth
+    devImage: ${DEV_IMAGE}
+    sync:
+      - path: ../.develop/:/slurpeeth/.develop/
+        disableDownload: true
+      - path: ../:/slurpeeth/
+        disableDownload: true
+        excludeFile: .gitignore
+    terminal:
+      command: .develop/start.sh

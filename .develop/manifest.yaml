@@ -1,0 +1,22 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: slurpeeth-dev
+  labels:
+    slurpeeth: slurpeeth
+spec:
+  selector:
+    matchLabels:
+      slurpeeth: slurpeeth
+  template:
+    metadata:
+      labels:
+        slurpeeth: slurpeeth
+    spec:
+      containers:
+        - name: slurpeeth
+          image: busybox:latest
+          imagePullPolicy: Always
+          securityContext:
+            privileged: true

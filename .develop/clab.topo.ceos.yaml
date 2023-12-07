@@ -1,0 +1,14 @@
+---
+name: slurpeeth
+
+topology:
+  nodes:
+    ceos1:
+      kind: ceos
+      image: 172.31.254.11/ceos:4.30.3M
+    ceos2:
+      kind: ceos
+      image: 172.31.254.11/ceos:4.30.3M
+  links:
+    - endpoints: ["ceos1:eth1","host:ceos1-eth1"]
+    - endpoints: ["ceos2:eth1","host:ceos2-eth1"]
