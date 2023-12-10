@@ -139,7 +139,7 @@ func (m *manager) setupDomains() error {
 			return err
 		}
 
-		m.segments[domainName] = domain
+		m.domains[domainName] = domain
 	}
 
 	return nil

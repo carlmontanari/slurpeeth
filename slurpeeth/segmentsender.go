@@ -1,11 +1,8 @@
 package slurpeeth
 
 import (
-	"fmt"
 	"log"
-	"net"
 	"syscall"
-	"time"
 )
 
 func (s *SegmentWorker) senderRun() {
@@ -19,50 +16,16 @@ func (s *SegmentWorker) senderRun() {
 		s.senderConn = nil
 	}
 
-	err := s.senderDial()
+	c, err := senderDial(s.Config.Send)
 	if err != nil {
 		s.senderErrChan <- err
 
 		return
 	}
 
+	s.senderConn = c
+
 	s.senderHandler()
-}
-
-func (s *SegmentWorker) senderDial() error {
-	destination := fmt.Sprintf("%s:%d", s.Config.Send.Address, s.Config.Send.Port)
-
-	log.Printf("dial remote send destination %s\n", destination)
-
-	var retries int
-
-	for {
-		c, err := net.Dial(TCP, destination)
-		if err == nil {
-			log.Printf("dial remote succeeded on %d attempt, continuing...\n", retries)
-
-			s.senderConn = c
-
-			return nil
-		}
-
-		retries++
-
-		if retries > MaxSenderRetries {
-			return fmt.Errorf(
-				"%w: maximum retries exceeeding attempting to dial destination %s",
-				ErrConnectivity, destination,
-			)
-		}
-
-		log.Printf(
-			"dial remote send destination failed on attempt %d,"+
-				" sleeping a bit before trying again...",
-			retries,
-		)
-
-		time.Sleep(time.Second)
-	}
 }
 
 func (s *SegmentWorker) senderHandler() {

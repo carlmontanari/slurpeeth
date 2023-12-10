@@ -8,16 +8,9 @@ type Config struct {
 	Domains map[string]Domain `yaml:"domains"`
 }
 
-// Domain holds information about (broadcast) domain participants.
+// Domain holds the segment information for participants of a broadcast domain.
 type Domain struct {
-	// Participants is a mapping of DomainParticipant for the given domain.
-	Participants map[string]DomainParticipant `yaml:"participants"`
-}
-
-// DomainParticipant holds the listen and send socket information for the domain participant.
-type DomainParticipant struct {
-	Listen Socket `yaml:"listen"`
-	Send   Socket `yaml:"send"`
+	Participants map[string]Segment `yaml:",inline"`
 }
 
 // Segment holds information for a p2p link -- that mean the interface we are attached to as well
