@@ -1,5 +1,7 @@
 package slurpeeth
 
+import "time"
+
 const (
 	// Version is the version of slurpeeth, set w/ build flags in ci; only useful/relevant for cli.
 	Version = "0.0.0"
@@ -23,4 +25,8 @@ const (
 const (
 	// MaxSenderRetries is the maximum amount of retry attempts to connect to a sender destination.
 	MaxSenderRetries = 60
+)
+
+const (
+	shutdownCheckDelay = 10 * time.Millisecond
 )

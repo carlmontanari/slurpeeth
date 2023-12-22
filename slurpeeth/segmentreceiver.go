@@ -7,9 +7,35 @@ import (
 	"syscall"
 )
 
+func (s *SegmentWorker) receiverShutdown() {
+	log.Printf(
+		"receiver for interface %q received shutdown",
+		s.Config.Interface,
+	)
+
+	// close/drain the shutdown queue so we don't accidentally not spawn connections
+	if len(s.receiverShutdownChan) != 0 {
+		close(s.receiverShutdownChan)
+		s.receiverShutdownChan = make(chan bool, 1)
+	}
+
+	if s.receiverListener != nil {
+		err := s.receiverListener.Close()
+		if err != nil {
+			log.Printf(
+				"ignoring error closing receiver listener for interface %q, err: %s",
+				s.Config.Interface,
+				err,
+			)
+		}
+
+		s.receiverListener = nil
+	}
+}
+
 func (s *SegmentWorker) receiverRun() {
 	if s.receiverListener != nil {
-		// listener was not nil, close it reset to nil
+		// listener was not nil, close it, reset to nil, probably this shouldnt happen
 		err := s.receiverListener.Close()
 		if err != nil {
 			log.Printf("encountered error closing receiver listener, err: %s", err)
@@ -25,16 +51,32 @@ func (s *SegmentWorker) receiverRun() {
 		return
 	}
 
-	for {
-		var conn net.Conn
+	go func() {
+		for {
+			if s.shutdownInProgress {
+				go s.receiverShutdown()
 
-		conn, err = s.receiverListener.Accept()
-		if err != nil {
-			s.errChan <- err
-		} else {
-			go s.receiverHandleConnection(conn)
+				return
+			}
+
+			var conn net.Conn
+
+			conn, err = s.receiverListener.Accept()
+			if err != nil {
+				// ignoring, we're shutting down...
+				if s.shutdownInProgress {
+					return
+				}
+
+				s.errChan <- err
+			} else {
+				go s.receiverHandleConnection(conn)
+			}
 		}
-	}
+	}()
+
+	<-s.receiverShutdownChan
+	go s.receiverShutdown()
 }
 
 func (s *SegmentWorker) receiverListen() error {
@@ -56,6 +98,12 @@ func (s *SegmentWorker) receiverHandleConnection(conn net.Conn) {
 	log.Printf("received a new connection from %s\n", conn.RemoteAddr())
 
 	for {
+		if s.shutdownInProgress {
+			go s.receiverShutdown()
+
+			return
+		}
+
 		messageLen, err := readSlurpeethHeaderSize(conn)
 		if err != nil {
 			log.Printf("encountered error reading slurpeeth message header, err: %s\n", err)

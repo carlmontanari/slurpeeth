@@ -11,3 +11,13 @@ func WithConfigFile(s string) Option {
 		return nil
 	}
 }
+
+// WithLiveReload instructs the manager to watch the config file for changes and "live reload" the
+// slurpeeth tunnels.
+func WithLiveReload(b bool) Option {
+	return func(m *manager) error {
+		m.liveReload = b
+
+		return nil
+	}
+}

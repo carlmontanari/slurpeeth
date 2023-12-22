@@ -33,6 +33,8 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /var/cache/apt/archive/*.deb
 
+COPY .develop/daemon.json /etc/docker/daemon.json
+
 WORKDIR /slurpeeth
 
 COPY go.mod go.mod

@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"os"
+	"sync"
 
 	"gopkg.in/yaml.v3"
 )
@@ -20,6 +21,8 @@ type Worker interface {
 	// Run runs the worker forever. The worker should manage the connection, restarting things if
 	// needed. Any errors should be returned on the error channel the worker was created with.
 	Run()
+	// Shutdown shuts down the sender and receiver for the given worker.
+	Shutdown(wg *sync.WaitGroup)
 }
 
 type manager struct {
@@ -28,6 +31,7 @@ type manager struct {
 
 	configPath string
 	config     *Config
+	liveReload bool
 
 	errChan chan error
 
@@ -139,6 +143,11 @@ func (m *manager) setupDomains() error {
 			return err
 		}
 
+		err = domain.Bind()
+		if err != nil {
+			return err
+		}
+
 		m.domains[domainName] = domain
 	}
 
@@ -155,4 +164,28 @@ func (m *manager) runDomains() {
 	for _, domain := range m.domains {
 		domain.Run()
 	}
+}
+
+func (m *manager) shutdownSegments() {
+	wg := &sync.WaitGroup{}
+
+	wg.Add(len(m.segments))
+
+	for _, segment := range m.segments {
+		go segment.Shutdown(wg)
+	}
+
+	wg.Wait()
+}
+
+func (m *manager) shutdownDomains() {
+	wg := &sync.WaitGroup{}
+
+	wg.Add(len(m.domains))
+
+	for _, domain := range m.domains {
+		go domain.Shutdown(wg)
+	}
+
+	wg.Wait()
 }
