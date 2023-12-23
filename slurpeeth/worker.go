@@ -142,13 +142,9 @@ func (w *Worker) shutdownFanout() {
 }
 
 func (w *Worker) interfaceFanout() {
-	for {
-		select {
-		case <-w.interfaceShutdownChan:
-			for idx := range w.interfaces {
-				// TODO maybe need to do a select on this
-				w.interfaces[idx].shutdownChan <- true
-			}
+	for range w.interfaceShutdownChan {
+		for idx := range w.interfaces {
+			w.interfaces[idx].shutdownChan <- true
 		}
 	}
 }
@@ -158,7 +154,6 @@ func (w *Worker) destinationFanout() {
 		select {
 		case <-w.destinationShutdownChan:
 			for idx := range w.destinations {
-				// TODO maybe need to do a select on this
 				w.destinations[idx].shutdownChan <- true
 			}
 		case msg := <-w.destinationFanoutChan:
@@ -187,7 +182,7 @@ func (w *Worker) Run() {
 	w.runDestinations()
 }
 
-// Shutdown shuts down SegmentWorker sender and receiver.
+// Shutdown shuts down the Worker interfaces and destinations.
 func (w *Worker) Shutdown(wg *sync.WaitGroup) {
 	log.Printf("begin worker shutdown for tunnel id %d", w.segment.ID)
 
@@ -199,8 +194,8 @@ func (w *Worker) Shutdown(wg *sync.WaitGroup) {
 	for {
 		var destinationConnsNotNil bool
 
-		for _, destination := range w.destinations {
-			if destination.conn != nil {
+		for idx := range w.destinations {
+			if w.destinations[idx].conn != nil {
 				destinationConnsNotNil = true
 
 				break
@@ -218,7 +213,26 @@ func (w *Worker) Shutdown(wg *sync.WaitGroup) {
 			continue
 		}
 
-		// TODO -- probably need to check some fd shit?
+		var interfaceFdsNotZero bool
+
+		for idx := range w.interfaces {
+			if w.interfaces[idx].fd != 0 {
+				interfaceFdsNotZero = true
+
+				break
+			}
+		}
+
+		if interfaceFdsNotZero {
+			log.Printf(
+				"interface fds for worker for tunnel id %d are not closed yet",
+				w.segment.ID,
+			)
+
+			time.Sleep(shutdownCheckDelay)
+
+			continue
+		}
 
 		break
 	}

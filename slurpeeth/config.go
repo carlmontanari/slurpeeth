@@ -29,7 +29,7 @@ func (m *manager) watchConfig() error {
 					panic("unknown issue handling config watch event")
 				}
 
-				log.Printf("got config watch event %q\n", event)
+				log.Printf("got config watch event %q", event)
 
 				if event.Name == m.configPath && event.Has(fsnotify.Write) {
 					m.reloadConfig()
@@ -57,14 +57,14 @@ func (m *manager) reloadConfig() {
 
 	configBytes, err := os.ReadFile(m.configPath)
 	if err != nil {
-		panic(fmt.Sprintf("failed reading config file at path %q, err: %s\n", m.configPath, err))
+		panic(fmt.Sprintf("failed reading config file at path %q, err: %s", m.configPath, err))
 	}
 
 	newConfig := &Config{}
 
 	err = yaml.Unmarshal(configBytes, newConfig)
 	if err != nil {
-		panic(fmt.Sprintf("failed unmarshlaing config file, err: %s\n", err))
+		panic(fmt.Sprintf("failed unmarshlaing config file, err: %s", err))
 	}
 
 	if configsEqual(m.config, newConfig) {
@@ -80,6 +80,17 @@ func (m *manager) reloadConfig() {
 
 	m.shutdownWorkers()
 
+	log.Print("deleting old workers...")
+
+	m.workers = make(map[uint16]*Worker)
+
+	log.Print("rebuilding workers...")
+
+	err = m.setupWorkers()
+	if err != nil {
+		panic(fmt.Sprintf("failed re-setting up workers after config change, err: %s", err))
+	}
+
 	log.Printf("restarting workers after config update...")
 
 	m.startWorkers()
@@ -90,32 +101,9 @@ func configsEqual(existingConfig, newConfig *Config) bool {
 		return false
 	}
 
-	// making the config be a *set* of segments (validated at marshal time i guess) would make
-	// this a lot simpler/less dumb; otherwise, whatever, we'll just iterate over both slices to
-	// compare for now...
-	for _, existingSegmentData := range existingConfig.Segments {
-		for _, newSegmentData := range newConfig.Segments {
-			if existingSegmentData.ID == newSegmentData.ID {
-				if reflect.DeepEqual(existingSegmentData, newSegmentData) {
-					continue
-				}
-
-				return false
-			}
-		}
+	if reflect.DeepEqual(existingConfig, newConfig) {
+		return true
 	}
 
-	for _, newSegmentData := range newConfig.Segments {
-		for _, existingSegmentData := range existingConfig.Segments {
-			if newSegmentData.ID == existingSegmentData.ID {
-				if reflect.DeepEqual(newSegmentData, existingSegmentData) {
-					continue
-				}
-
-				return false
-			}
-		}
-	}
-
-	return true
+	return false
 }

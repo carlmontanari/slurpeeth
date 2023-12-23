@@ -46,6 +46,26 @@ func newInterfaceWorker(segmentName, interfaceName string) (interfaceWorker, err
 	}, nil
 }
 
+func (w *Worker) shutdownInterface(idx int) {
+	log.Printf(
+		"interface %q for tunnel id %d received shutdown",
+		w.interfaces[idx].name,
+		w.segment.ID,
+	)
+
+	err := syscall.Close(w.interfaces[idx].fd)
+	if err != nil {
+		log.Printf(
+			"ignoring error closing fd for interface %q for tunnel id %d, err: %s",
+			w.interfaces[idx].name,
+			w.segment.ID,
+			err,
+		)
+	}
+
+	w.interfaces[idx].fd = 0
+}
+
 func (w *Worker) runInterfaces() {
 	for idx := range w.interfaces {
 		w.runInterface(idx)
@@ -110,9 +130,19 @@ func (w *Worker) runInterfaceRead(idx int) {
 	for {
 		select {
 		case <-w.interfaces[idx].shutdownChan:
+			w.shutdownInterface(idx)
+
 			return
 		default:
 			if w.shutdownInProgress {
+				// make sure we drain the shutdown channel so we dont try to close things multiple
+				// times, possibly after re-setting up interfaces
+				for len(w.interfaces[idx].shutdownChan) > 0 {
+					<-w.interfaces[idx].shutdownChan
+				}
+
+				w.shutdownInterface(idx)
+
 				return
 			}
 
@@ -141,8 +171,16 @@ func (w *Worker) runInterfaceWrite(idx int) {
 	for {
 		select {
 		case <-w.interfaces[idx].shutdownChan:
+			w.shutdownInterface(idx)
+
 			return
 		case msg := <-w.interfaces[idx].sendChan:
+			if w.shutdownInProgress {
+				w.shutdownInterface(idx)
+
+				return
+			}
+
 			err := syscall.Sendto(w.interfaces[idx].fd, msg.Body, 0, w.interfaces[idx].details)
 			if err != nil {
 				log.Printf(

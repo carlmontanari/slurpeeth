@@ -60,9 +60,7 @@ func GetManager(opts ...Option) (Manager, error) {
 		port:                 Port,
 		errChan:              make(chan error),
 		listenerShutdownChan: make(chan bool),
-		// TODO -- this currently doesnt work  on a single host because we cant have two tunnel ids
-		//  that are the same
-		workers: map[uint16]*Worker{},
+		workers:              map[uint16]*Worker{},
 	}
 
 	for _, opt := range opts {

@@ -79,9 +79,10 @@ func (w *Worker) runDestinationDialRetry(destination string) (net.Conn, error) {
 		c, err := net.Dial(TCP, addr)
 		if err == nil {
 			log.Printf(
-				"dial destination %q succeeded on %d attempt for tunnel id %d, continuing...",
-				addr, w.segment.ID,
+				"dial destination %q succeeded on attempt %d for tunnel id %d, continuing...",
+				addr,
 				retries,
+				w.segment.ID,
 			)
 
 			return c, nil
@@ -109,7 +110,7 @@ func (w *Worker) runDestinationDialRetry(destination string) (net.Conn, error) {
 func (w *Worker) runDestinationHandler(idx int) {
 	for {
 		select {
-		case <-w.destinationShutdownChan:
+		case <-w.destinations[idx].shutdownChan:
 			w.shutdownDestination(idx)
 
 			return

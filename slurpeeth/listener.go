@@ -67,7 +67,7 @@ func (l *Listener) handle(conn net.Conn) {
 		if err != nil {
 			l.errChan <- err
 
-			continue
+			return
 		}
 
 		l.messageRelay(m.Header.ID, &m)
