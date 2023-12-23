@@ -14,12 +14,15 @@ const (
 	// TCP is a const for... TCP!
 	TCP = "tcp"
 
+	// Port is the default Slurpeeth port.
+	Port = 4799
+
 	// ReadSize is the size of chunks we read from the interface a sender consumes from.
 	ReadSize = 65_500
 
 	// MessageHeaderSize is the size of the "header" we prepend to messages sent from a Sender --
-	// this "field" specifies the size of the remaining message.
-	MessageHeaderSize = 5
+	// this header contains the tunnel ID, size of the message, and some reserved space.
+	MessageHeaderSize = 32
 )
 
 const (
@@ -28,5 +31,6 @@ const (
 )
 
 const (
+	dialRetryDelay     = 250 * time.Millisecond
 	shutdownCheckDelay = 10 * time.Millisecond
 )

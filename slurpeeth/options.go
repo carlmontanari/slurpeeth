@@ -21,3 +21,12 @@ func WithLiveReload(b bool) Option {
 		return nil
 	}
 }
+
+// WithPort sets up a slurpeeth manager with a custom listen port.
+func WithPort(i uint16) Option {
+	return func(m *manager) error {
+		m.port = i
+
+		return nil
+	}
+}
