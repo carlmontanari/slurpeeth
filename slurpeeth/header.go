@@ -80,9 +80,9 @@ func NewHeaderFromBody(id uint16, sender string, b Bytes) Header {
 	l := uint16(len(b))
 
 	return Header{
-		// for now only id, size, and sender are encoded in the header, then we pad 12 more 0s
-		// for future use
-		Body:      []byte(fmt.Sprintf("%05d%05d%s%12d", id, l, sender, 0)),
+		// for now only id (5), size(5), and sender(10) are encoded in the header, then we pad 12
+		// more 0s for future use
+		Body:      []byte(fmt.Sprintf("%05d%05d%s%012d", id, l, sender, 0)),
 		ID:        id,
 		Size:      l,
 		TotalSize: MessageHeaderSize + l,

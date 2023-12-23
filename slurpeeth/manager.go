@@ -19,6 +19,8 @@ type manager struct {
 	ctx       context.Context
 	ctxCancel context.CancelFunc
 
+	debug bool
+
 	configPath string
 	config     *Config
 	liveReload bool
@@ -158,7 +160,7 @@ func (m *manager) listenErrors() {
 
 func (m *manager) setupWorkers() error {
 	for _, segmentConfig := range m.config.Segments {
-		worker, err := NewWorker(m.port, segmentConfig, m.errChan)
+		worker, err := NewWorker(m.port, segmentConfig, m.errChan, m.debug)
 		if err != nil {
 			return err
 		}
@@ -215,9 +217,16 @@ func (m *manager) messageRelay(id uint16, msg *Message) {
 		return
 	}
 
-	select {
-	case worker.messageChan <- msg:
-	default:
-		log.Printf("no worker listenign for tunnel id %d, droppign message not transferred", id)
+	for idx := range worker.interfaces {
+		if msg.Header.Sender == worker.interfaces[idx].sender {
+			// message came from this worker, dont send it back to them
+			continue
+		}
+
+		select {
+		case worker.interfaces[idx].sendChan <- msg:
+		default:
+			log.Printf("no worker listening for tunnel id %d, droppign message not transferred", id)
+		}
 	}
 }

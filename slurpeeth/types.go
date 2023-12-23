@@ -15,11 +15,11 @@ type Segment struct {
 	// Config.Port by the main slurpeeth process will send messages whose header indicates they are
 	// this ID to the interface and/or destination(s) in this segment.
 	ID uint16 `yaml:"id"`
-	// Interface is the local interface to send traffic received on this interface to each of the
-	// Destinations in the Destination field. If no Interface is specified it is assumed that this
-	// slurpeeth instance is basically a bridge/proxy node that will just forward traffic to
-	// destinations based on tunnel id.
-	Interface string `yaml:"interface"`
+	// Interfaces is a listing of local interface to send traffic received on this interface to each
+	// of the Destinations in the Destination field. If no interface(s) are specified it is assumed
+	// that this slurpeeth instance is basically a bridge/proxy node that will just forward traffic
+	// to destinations based on tunnel id.
+	Interfaces []string `yaml:"interfaces"`
 	// Destinations is a listing of destination to send traffic from this Segment to.
 	Destinations []string `yaml:"destinations"`
 }

@@ -30,3 +30,12 @@ func WithPort(i uint16) Option {
 		return nil
 	}
 }
+
+// WithDebug runs slurpeeth with debug mode.
+func WithDebug(b bool) Option {
+	return func(m *manager) error {
+		m.debug = b
+
+		return nil
+	}
+}

@@ -52,7 +52,7 @@ func NewMessageFromConn(conn net.Conn) (Message, error) {
 
 	return Message{
 		Header: h,
-		Body:   nil,
+		Body:   rawBodyBytes,
 	}, nil
 }
 
