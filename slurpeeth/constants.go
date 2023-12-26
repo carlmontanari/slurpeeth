@@ -14,6 +14,9 @@ const (
 	// TCP is a const for... TCP!
 	TCP = "tcp"
 
+	// Address is the default Slurpeeth listen address.
+	Address = "0.0.0.0"
+
 	// Port is the default Slurpeeth port.
 	Port = 4799
 

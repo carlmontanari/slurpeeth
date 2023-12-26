@@ -25,6 +25,8 @@ type manager struct {
 	config     *Config
 	liveReload bool
 
+	// listen address -- defaults to 0.0.0.0.
+	address string
 	// listen port -- defaults to 4799.
 	port uint16
 
@@ -57,6 +59,7 @@ func GetManager(opts ...Option) (Manager, error) {
 		config: &Config{
 			Segments: []Segment{},
 		},
+		address:              Address,
 		port:                 Port,
 		errChan:              make(chan error),
 		listenerShutdownChan: make(chan bool),
@@ -193,7 +196,7 @@ func (m *manager) shutdownWorkers() {
 }
 
 func (m *manager) setupListener() error {
-	l, err := NewListener(m.port, m.messageRelay, m.errChan, m.listenerShutdownChan)
+	l, err := NewListener(m.address, m.port, m.messageRelay, m.errChan, m.listenerShutdownChan)
 	if err != nil {
 		return err
 	}

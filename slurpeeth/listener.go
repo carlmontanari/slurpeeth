@@ -8,6 +8,7 @@ import (
 
 // NewListener returns a new listener listening on 127.0.0.1 and the slurpeeth port.
 func NewListener(
+	address string,
 	port uint16,
 	messageRelay func(id uint16, m *Message),
 	errChan chan error,
@@ -20,7 +21,7 @@ func NewListener(
 		shutdownChan: shutdownChan,
 	}
 
-	addr := fmt.Sprintf("127.0.0.1:%d", port)
+	addr := fmt.Sprintf("%s:%d", address, port)
 
 	l, err := net.Listen(TCP, addr)
 	if err != nil {

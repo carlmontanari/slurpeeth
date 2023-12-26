@@ -22,6 +22,15 @@ func WithLiveReload(b bool) Option {
 	}
 }
 
+// WithListenAddress sets up a slurpeeth manager with a custom listen address.
+func WithListenAddress(s string) Option {
+	return func(m *manager) error {
+		m.address = s
+
+		return nil
+	}
+}
+
 // WithPort sets up a slurpeeth manager with a custom listen port.
 func WithPort(i uint16) Option {
 	return func(m *manager) error {
