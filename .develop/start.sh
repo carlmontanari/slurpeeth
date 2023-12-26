@@ -4,7 +4,7 @@ COLOR_RED="\033[0;31m"
 COLOR_CYAN="\033[0;36m"
 COLOR_RESET="\033[0m"
 
-RUN_CMD="go run main.go --config .develop/slurpeeth.yaml"
+RUN_CMD="go run main.go --config .develop/slurpeeth.yaml --debug"
 
 go mod tidy
 service docker start

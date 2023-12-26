@@ -43,7 +43,8 @@ func WithPort(i uint16) Option {
 }
 
 // WithDialTimeout sets the maximum timeout for dial attempts for slurpeeth workers -- this is the
-// maximum amount of time a worker will continue to attempt to dial a destination.
+// maximum amount of time a worker will continue to attempt to dial a destination. 0 indicates that
+// there is no timeout and we'll continually try to dial the connection.
 func WithDialTimeout(d time.Duration) Option {
 	return func(m *manager) error {
 		m.dialTimeout = d

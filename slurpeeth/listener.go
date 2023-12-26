@@ -1,7 +1,9 @@
 package slurpeeth
 
 import (
+	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net"
 )
@@ -15,20 +17,12 @@ func NewListener(
 	shutdownChan chan bool,
 ) (*Listener, error) {
 	listener := &Listener{
+		addr:         fmt.Sprintf("%s:%d", address, port),
 		l:            nil,
 		messageRelay: messageRelay,
 		errChan:      errChan,
 		shutdownChan: shutdownChan,
 	}
-
-	addr := fmt.Sprintf("%s:%d", address, port)
-
-	l, err := net.Listen(TCP, addr)
-	if err != nil {
-		return nil, err
-	}
-
-	listener.l = l
 
 	return listener, nil
 }
@@ -36,14 +30,50 @@ func NewListener(
 // Listener is the main process listening on the slurpeeth port -- it relays messages to workers
 // based on tunnel id (via the manager).
 type Listener struct {
+	addr         string
 	l            net.Listener
 	messageRelay func(id uint16, m *Message)
 	errChan      chan error
 	shutdownChan chan bool
 }
 
+// Bind starts the listener/binds it to the address/port it was created with. It must be called
+// before Run.
+func (l *Listener) Bind() error {
+	lis, err := net.Listen(TCP, l.addr)
+	if err != nil {
+		return err
+	}
+
+	l.l = lis
+
+	return nil
+}
+
 // Run runs the listener.
 func (l *Listener) Run() {
+	if l.l != nil {
+		err := l.l.Close()
+		if err != nil {
+			log.Printf(
+				"encountered error closing listener prior to running, will ignore, err: %s",
+				err,
+			)
+		}
+
+		err = l.Bind()
+		if err != nil {
+			log.Printf(
+				"encountered error re-binding listener prior to running, cannot continue, err: %s",
+				err,
+			)
+
+			l.errChan <- err
+
+			return
+		}
+	}
+
 	go func() {
 		for {
 			conn, err := l.l.Accept()
@@ -66,6 +96,13 @@ func (l *Listener) handle(conn net.Conn) {
 	for {
 		m, err := NewMessageFromConn(conn)
 		if err != nil {
+			if errors.Is(err, io.EOF) {
+				log.Printf("encountered EOF error during listener handle, ignoring...")
+
+				continue
+			}
+
+			// something other than EOF we dunno how to handle for now and is probably bad
 			l.errChan <- err
 
 			return

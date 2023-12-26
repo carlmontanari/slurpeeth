@@ -259,6 +259,11 @@ func (m *manager) setupListener() error {
 		return err
 	}
 
+	err = l.Bind()
+	if err != nil {
+		return err
+	}
+
 	m.listener = l
 
 	return nil

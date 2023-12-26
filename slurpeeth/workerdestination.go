@@ -46,7 +46,8 @@ func (w *Worker) runDestination(idx int) {
 		err := w.destinations[idx].conn.Close()
 		if err != nil {
 			log.Printf(
-				"encountered error closing connection to %q for tunnel id %d, err: %s",
+				"encountered error closing connection to %q for tunnel id %d prior to running,"+
+					" will ignore, err: %s",
 				w.destinations[idx].name,
 				w.segment.ID,
 				err,
@@ -82,7 +83,7 @@ func (w *Worker) runDestinationDialRetry(destination string) (net.Conn, error) {
 		c, err := net.Dial(TCP, addr)
 		if err == nil {
 			log.Printf(
-				"dial destination %q succeeded on attempt %d for tunnel id %d, continuing...",
+				"dial destination %q succeeded on attempt %d for tunnel id %d",
 				addr,
 				retries,
 				w.segment.ID,
@@ -95,7 +96,7 @@ func (w *Worker) runDestinationDialRetry(destination string) (net.Conn, error) {
 
 		if time.Now().After(deadline) {
 			return nil, fmt.Errorf(
-				"%w: maximum retries exceeeding attempting to dial destination %q for tunnel id %d",
+				"%w: maximum retry duration exceeeding attempting to dial destination %q for tunnel id %d",
 				ErrConnectivity, addr, w.segment.ID,
 			)
 		}
