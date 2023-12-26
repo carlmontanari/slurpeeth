@@ -1,5 +1,7 @@
 package slurpeeth
 
+import "time"
+
 // Option defines an option for the slurpeeth Manager.
 type Option func(m *manager) error
 
@@ -35,6 +37,16 @@ func WithListenAddress(s string) Option {
 func WithPort(i uint16) Option {
 	return func(m *manager) error {
 		m.port = i
+
+		return nil
+	}
+}
+
+// WithDialTimeout sets the maximum timeout for dial attempts for slurpeeth workers -- this is the
+// maximum amount of time a worker will continue to attempt to dial a destination.
+func WithDialTimeout(d time.Duration) Option {
+	return func(m *manager) error {
+		m.dialTimeout = d
 
 		return nil
 	}

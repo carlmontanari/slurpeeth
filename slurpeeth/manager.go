@@ -2,10 +2,12 @@ package slurpeeth
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"gopkg.in/yaml.v3"
 )
@@ -13,11 +15,13 @@ import (
 // Manager is an interface representing the manager singleton's methods.
 type Manager interface {
 	Run() error
+	RunDaemon(exitErr, exitDone chan bool) error
 }
 
 type manager struct {
 	ctx       context.Context
 	ctxCancel context.CancelFunc
+	errored   bool
 
 	debug bool
 
@@ -29,6 +33,9 @@ type manager struct {
 	address string
 	// listen port -- defaults to 4799.
 	port uint16
+
+	// maximum duration workers will try to dial a destination -- defaults to 1 minute.
+	dialTimeout time.Duration
 
 	// channel to receiver errors from the workers on.
 	errChan chan error
@@ -61,6 +68,7 @@ func GetManager(opts ...Option) (Manager, error) {
 		},
 		address:              Address,
 		port:                 Port,
+		dialTimeout:          DialTimeout,
 		errChan:              make(chan error),
 		listenerShutdownChan: make(chan bool),
 		workers:              map[uint16]*Worker{},
@@ -103,8 +111,7 @@ func GetManager(opts ...Option) (Manager, error) {
 	return managerInst, nil
 }
 
-// Run starts all connections in the configuration and runs until sigint or failure.
-func (m *manager) Run() error {
+func (m *manager) run() error {
 	log.Println("manager run started...")
 
 	log.Println("starting error receiver...")
@@ -146,9 +153,56 @@ func (m *manager) Run() error {
 		return err
 	}
 
-	log.Println("running until sigint...")
+	return nil
+}
+
+// Run starts all connections in the configuration and runs until sigint or failure.
+func (m *manager) Run() error {
+	err := m.run()
+	if err != nil {
+		return err
+	}
+
+	log.Println("running forever or until error...")
 
 	<-m.ctx.Done()
+
+	if m.errored {
+		log.Println("root context signaled done with error, exiting...")
+
+		return fmt.Errorf("%w: exiting due to worker signaling error", ErrConnectivity)
+	}
+
+	log.Println("root context signaled done without error, exiting...")
+
+	return nil
+}
+
+// RunDaemon runs the "normal" run things but accepts channels that it can send a signal on if it
+// exits (rather than blocking like "normal" Run does).
+func (m *manager) RunDaemon(exitErr, exitDone chan bool) error {
+	err := m.run()
+	if err != nil {
+		return err
+	}
+
+	log.Println("running in background forever or until error...")
+
+	go func() {
+		<-m.ctx.Done()
+
+		if m.errored {
+			log.Println("root context signaled done with error, exiting...")
+
+			exitErr <- true
+
+			return
+		}
+
+		log.Println("root context signaled done without error, exiting...")
+
+		exitDone <- true
+	}()
 
 	return nil
 }
@@ -156,12 +210,16 @@ func (m *manager) Run() error {
 func (m *manager) listenErrors() {
 	for err := range m.errChan {
 		log.Printf("received error during run, err: %s\n", err)
+
+		m.errored = true
+
+		m.ctxCancel()
 	}
 }
 
 func (m *manager) setupWorkers() error {
 	for _, segmentConfig := range m.config.Segments {
-		worker, err := NewWorker(m.port, segmentConfig, m.errChan, m.debug)
+		worker, err := NewWorker(m.port, m.dialTimeout, segmentConfig, m.errChan, m.debug)
 		if err != nil {
 			return err
 		}

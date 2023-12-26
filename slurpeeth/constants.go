@@ -20,6 +20,9 @@ const (
 	// Port is the default Slurpeeth port.
 	Port = 4799
 
+	// DialTimeout is the default max dial time for workers dialing destinations.
+	DialTimeout = time.Minute
+
 	// ReadSize is the size of chunks we read from the interface a sender consumes from.
 	ReadSize = 65_500
 
@@ -29,11 +32,6 @@ const (
 )
 
 const (
-	// MaxSenderRetries is the maximum amount of retry attempts to connect to a sender destination.
-	MaxSenderRetries = 60
-)
-
-const (
-	dialRetryDelay     = 250 * time.Millisecond
+	dialRetryDelay     = 500 * time.Millisecond
 	shutdownCheckDelay = 10 * time.Millisecond
 )

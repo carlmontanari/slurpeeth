@@ -73,6 +73,9 @@ func (w *Worker) runDestinationDialRetry(destination string) (net.Conn, error) {
 
 	log.Printf("dial destination %q for tunnel id %d", addr, w.segment.ID)
 
+	startTime := time.Now()
+	deadline := startTime.Add(w.dialTimeout)
+
 	var retries int
 
 	for {
@@ -90,18 +93,26 @@ func (w *Worker) runDestinationDialRetry(destination string) (net.Conn, error) {
 
 		retries++
 
-		if retries > MaxSenderRetries {
+		if time.Now().After(deadline) {
 			return nil, fmt.Errorf(
 				"%w: maximum retries exceeeding attempting to dial destination %q for tunnel id %d",
 				ErrConnectivity, addr, w.segment.ID,
 			)
 		}
 
-		log.Printf(
-			"dial remote send destination %q for tunnel id %d, failed on attempt %d,"+
-				" sleeping a bit before trying again...",
-			addr, w.segment.ID, retries,
-		)
+		if w.debug {
+			log.Printf(
+				"dial remote send destination %q for tunnel id %d, failed on attempt %d,"+
+					" sleeping a bit before trying again...",
+				addr, w.segment.ID, retries,
+			)
+		} else if retries%5 == 0 {
+			log.Printf(
+				"dial remote send destination %q for tunnel id %d, failed on attempt %d,"+
+					" sleeping a bit before trying again...",
+				addr, w.segment.ID, retries,
+			)
+		}
 
 		time.Sleep(dialRetryDelay)
 	}

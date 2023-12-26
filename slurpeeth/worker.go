@@ -9,6 +9,7 @@ import (
 // NewWorker returns a new worker.
 func NewWorker(
 	port uint16,
+	dialTimeout time.Duration,
 	segment Segment,
 	errChan chan error,
 	debug bool,
@@ -16,7 +17,10 @@ func NewWorker(
 	s := &Worker{
 		debug: debug,
 
-		port:    port,
+		port: port,
+
+		dialTimeout: dialTimeout,
+
 		segment: segment,
 
 		errChan: errChan,
@@ -57,7 +61,10 @@ func NewWorker(
 type Worker struct {
 	debug bool
 
-	port    uint16
+	port uint16
+
+	dialTimeout time.Duration
+
 	segment Segment
 
 	// errChan is the handle to the error chanel in the manager process, this is how we propagate
