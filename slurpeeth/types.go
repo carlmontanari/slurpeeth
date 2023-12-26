@@ -6,8 +6,11 @@ type Config struct {
 	Segments []Segment `yaml:"segments"`
 }
 
-// Segment holds information for a p2p link -- that mean the interface we are attached to as well
-// as the listen and send socket information.
+// Segment holds information about a "segment" -- that is a collection of interfaces and
+// destinations. Note that *all traffic from interfaces* is sent directly to destinations -- that
+// means that for local traffic it goes "out" to a TCP connection to the destination(s) listed, but
+// on of those destinations can be localhost. In this way we can connect multiple interfaces locally
+// -- probably mostly useful for testing as otherwise you'd just connect veths.
 type Segment struct {
 	// Name is an optional friendly name for the Segment.
 	Name string `yaml:"name"`

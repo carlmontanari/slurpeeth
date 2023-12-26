@@ -70,6 +70,6 @@ func (l *Listener) handle(conn net.Conn) {
 			return
 		}
 
-		l.messageRelay(m.Header.ID, &m)
+		go l.messageRelay(m.Header.ID, &m)
 	}
 }

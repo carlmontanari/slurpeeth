@@ -221,10 +221,6 @@ func (m *manager) messageRelay(id uint16, msg *Message) {
 			continue
 		}
 
-		select {
-		case worker.interfaces[idx].sendChan <- msg:
-		default:
-			log.Printf("no worker listening for tunnel id %d, droppign message not transferred", id)
-		}
+		worker.interfaces[idx].sendChan <- msg
 	}
 }

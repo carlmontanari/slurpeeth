@@ -158,14 +158,9 @@ func (w *Worker) destinationFanout() {
 			}
 		case msg := <-w.destinationFanoutChan:
 			for idx := range w.destinations {
-				select {
-				case w.destinations[idx].sendChan <- msg:
-				default:
-					log.Printf(
-						"failed writing message from for tunnel id %d to destination %s",
-						w.segment.ID, w.destinations[idx].name,
-					)
-				}
+				// future: should this or this for loop be in a goroutine? so we dont block sending?
+				// and/or should the channels be buffered for some amount?
+				w.destinations[idx].sendChan <- msg
 			}
 		}
 	}

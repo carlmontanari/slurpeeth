@@ -1,6 +1,6 @@
 ---
 segments:
-  - name: node-a-eth1
+  - name: pod-a
     id: 1
     interfaces:
       - node-a-eth1
