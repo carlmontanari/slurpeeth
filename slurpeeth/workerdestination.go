@@ -96,8 +96,11 @@ func (w *Worker) runDestinationDialRetry(destination string) (net.Conn, error) {
 
 		if time.Now().After(deadline) {
 			return nil, fmt.Errorf(
-				"%w: maximum retry duration exceeeding attempting to dial destination %q for tunnel id %d",
-				ErrConnectivity, addr, w.segment.ID,
+				"%w: maximum retry duration exceeeding attempting to dial destination %q"+
+					" for tunnel id %d",
+				ErrConnectivity,
+				addr,
+				w.segment.ID,
 			)
 		}
 

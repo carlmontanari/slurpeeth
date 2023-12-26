@@ -97,9 +97,12 @@ func (l *Listener) handle(conn net.Conn) {
 		m, err := NewMessageFromConn(conn)
 		if err != nil {
 			if errors.Is(err, io.EOF) {
-				log.Printf("encountered EOF error during listener handle, ignoring...")
+				log.Printf(
+					"encountered EOF error during listener handle," +
+						" exiting handler for this connection...",
+				)
 
-				continue
+				return
 			}
 
 			// something other than EOF we dunno how to handle for now and is probably bad
