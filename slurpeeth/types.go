@@ -2,29 +2,30 @@ package slurpeeth
 
 // Config holds the yaml configuration used for slurpeeth.
 type Config struct {
-	// Segments are p2p segments.
-	Segments map[string]Segment `yaml:"segments"`
-	// Domains are broadcast domains.
-	Domains map[string]Domain `yaml:"domains"`
+	// Segments is a list of Segments -- basically point-to-point connections.
+	Segments []Segment `yaml:"segments"`
 }
 
-// Domain holds the segment information for participants of a broadcast domain.
-type Domain struct {
-	Participants map[string]Segment `yaml:",inline"`
-}
-
-// Segment holds information for a p2p link -- that mean the interface we are attached to as well
-// as the listen and send socket information.
+// Segment holds information about a "segment" -- that is a collection of interfaces and
+// destinations. Note that *all traffic from interfaces* is sent directly to destinations -- that
+// means that for local traffic it goes "out" to a TCP connection to the destination(s) listed, but
+// on of those destinations can be localhost. In this way we can connect multiple interfaces locally
+// -- probably mostly useful for testing as otherwise you'd just connect veths.
 type Segment struct {
-	Interface string
-	Listen    Socket `yaml:"listen"`
-	Send      Socket `yaml:"send"`
+	// Name is an optional friendly name for the Segment.
+	Name string `yaml:"name"`
+	// ID is the tunnel ID that this segment is represented by -- traffic received on the
+	// Config.Port by the main slurpeeth process will send messages whose header indicates they are
+	// this ID to the interface and/or destination(s) in this segment.
+	ID uint16 `yaml:"id"`
+	// Interfaces is a listing of local interface to send traffic received on this interface to each
+	// of the Destinations in the Destination field. If no interface(s) are specified it is assumed
+	// that this slurpeeth instance is basically a bridge/proxy node that will just forward traffic
+	// to destinations based on tunnel id.
+	Interfaces []string `yaml:"interfaces"`
+	// Destinations is a listing of destination to send traffic from this Segment to.
+	Destinations []string `yaml:"destinations"`
 }
 
-// Socket holds information about a source or destination socket.
-type Socket struct {
-	// Address is the listen or target address.
-	Address string `yaml:"address"`
-	// Port is the listen or target port.
-	Port int32 `yaml:"port"`
-}
+// Bytes is a slice of bytes.
+type Bytes []byte

@@ -6,9 +6,11 @@ topology:
     ceos1:
       kind: ceos
       image: 172.31.254.11/ceos:4.30.3M
+      startup-config: configs/ceos/ceos1.cfg
     ceos2:
       kind: ceos
       image: 172.31.254.11/ceos:4.30.3M
+      startup-config: configs/ceos/ceos2.cfg
   links:
     - endpoints: ["ceos1:eth1","host:ceos1-eth1"]
     - endpoints: ["ceos2:eth1","host:ceos2-eth1"]

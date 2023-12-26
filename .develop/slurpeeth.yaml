@@ -1,18 +1,9 @@
 ---
 segments:
-  node-a-eth1-to-node-b-eth1:
-    interface: node-a-eth1
-    listen:
-      address: 127.0.0.1
-      port: 5001
-    send:
-      address: 127.0.0.1
-      port: 5002
-  node-b-eth1-to-node-a-eth1:
-    interface: node-b-eth1
-    listen:
-      address: 127.0.0.1
-      port: 5002
-    send:
-      address: 127.0.0.1
-      port: 5001
+  - name: pod-a
+    id: 1
+    interfaces:
+      - node-a-eth1
+      - node-b-eth1
+    destinations:
+      - 127.0.0.1

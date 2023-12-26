@@ -1,6 +1,8 @@
 package slurpeeth
 
-import "errors"
+import (
+	"errors"
+)
 
 // ErrConnectivity is a generic error for connectivity issues -- either between senders and
 // receivers, or for connectivity to local interfaces.

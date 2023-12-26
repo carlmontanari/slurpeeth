@@ -9,6 +9,8 @@ import (
 
 const (
 	configFlag = "config"
+	reloadFlag = "reload"
+	debugFlag  = "debug"
 )
 
 // ShowVersion shows the clabernetes version information for clabernetes CLI tools.
@@ -32,10 +34,24 @@ func Entrypoint() *cli.App {
 				Required: false,
 				Value:    "slurpeeth.yaml",
 			},
+			&cli.BoolFlag{
+				Name:     reloadFlag,
+				Usage:    "live reload slurpeeth configuration file",
+				Required: false,
+				Value:    false,
+			},
+			&cli.BoolFlag{
+				Name:     debugFlag,
+				Usage:    "enable debug logging",
+				Required: false,
+				Value:    false,
+			},
 		},
 		Action: func(ctx *cli.Context) error {
 			m, err := slurpeeth.GetManager(
 				slurpeeth.WithConfigFile(ctx.String(configFlag)),
+				slurpeeth.WithLiveReload(ctx.Bool(reloadFlag)),
+				slurpeeth.WithDebug(ctx.Bool(debugFlag)),
 			)
 			if err != nil {
 				return err

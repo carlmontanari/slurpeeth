@@ -1,5 +1,7 @@
-defo gotta figure out wtf about error handling -- like... what should we do? easier for p2p things
-but basically if we have something go wrong i think we should try to restart hte segment worker...
-if we ultimately cant get the segment worker running we shoudl put the interface to down (like link set down or w/e)
+slurpeeth
+=========
 
-should have links start in down position and then moved to up if/when segment worker is ... working
+A very dumb, but hopefully good enough, TCP tunneling utility. Connect to interface(s), then send 
+that traffic to destination(s) -- thats it. Slurpeeth has no awareness/cares about *what* its
+sending; meaning if you setup effectively a broadcast domain (multiple interfaces or destinations)
+it will blindly forward traffic from source "a" to all destination(s).

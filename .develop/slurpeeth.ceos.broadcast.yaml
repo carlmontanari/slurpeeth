@@ -1,50 +1,10 @@
 ---
 segments:
-  ceos1-eth1-to-domain-1:
-    interface: ceos1-eth1
-    listen:
-      address: 127.0.0.1
-      port: 5001
-    send:
-      address: 127.0.0.1
-      port: 5011
-  ceos2-eth1-to-domain-1:
-    interface: ceos2-eth1
-    listen:
-      address: 127.0.0.1
-      port: 5002
-    send:
-      address: 127.0.0.1
-      port: 5012
-  ceos3-eth1-to-domain-1:
-    interface: ceos3-eth1
-    listen:
-      address: 127.0.0.1
-      port: 5003
-    send:
-      address: 127.0.0.1
-      port: 5013
-
-domains:
-  domain-1:
-    ceos-1:
-      listen:
-        address: 127.0.0.1
-        port: 5011
-      send:
-        address: 127.0.0.1
-        port: 5001
-    ceos-2:
-      listen:
-        address: 127.0.0.1
-        port: 5012
-      send:
-        address: 127.0.0.1
-        port: 5002
-    ceos-3:
-      listen:
-        address: 127.0.0.1
-        port: 5013
-      send:
-        address: 127.0.0.1
-        port: 5003
+  - name: pod-a
+    id: 1
+    interfaces:
+      - ceos1-eth1
+      - ceos2-eth1
+      - ceos3-eth1
+    destinations:
+      - 127.0.0.1
