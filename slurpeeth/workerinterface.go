@@ -28,7 +28,7 @@ func newInterfaceWorker(segmentName, interfaceName string) (interfaceWorker, err
 	sender := hex.EncodeToString(segmentHash.Sum(nil))[0:10]
 
 	log.Printf(
-		"interface worker for segment %q interface %q using sendiner id %q",
+		"interface worker for segment %q interface %q using sender id %q",
 		segmentName,
 		interfaceName,
 		sender,

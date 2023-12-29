@@ -12,9 +12,11 @@ func NewWorker(
 	dialTimeout time.Duration,
 	segment Segment,
 	errChan chan error,
+	retry,
 	debug bool,
 ) (*Worker, error) {
 	s := &Worker{
+		retry: retry,
 		debug: debug,
 
 		port: port,
@@ -30,7 +32,7 @@ func NewWorker(
 		interfaces:            make([]interfaceWorker, len(segment.Interfaces)),
 
 		destinationFanoutChan:   make(chan *Message),
-		destinationErrChan:      make(chan error),
+		destinationErrChan:      make(chan destinationError),
 		destinationShutdownChan: make(chan bool),
 		destinations:            make([]destinationWorker, len(segment.Destinations)),
 
@@ -49,6 +51,7 @@ func NewWorker(
 	for idx, destination := range segment.Destinations {
 		s.destinations[idx] = destinationWorker{
 			name:         destination,
+			idx:          idx,
 			sendChan:     make(chan *Message),
 			shutdownChan: make(chan bool),
 		}
@@ -59,6 +62,7 @@ func NewWorker(
 
 // Worker is an object that works for a given segment -- a p2p connection.
 type Worker struct {
+	retry bool
 	debug bool
 
 	port uint16
@@ -77,7 +81,7 @@ type Worker struct {
 
 	// senders to destinations we represent
 	destinationFanoutChan   chan *Message
-	destinationErrChan      chan error
+	destinationErrChan      chan destinationError
 	destinationShutdownChan chan bool
 	destinations            []destinationWorker
 
@@ -116,14 +120,21 @@ func (w *Worker) Bind() error {
 func (w *Worker) propagateErrors() {
 	for {
 		select {
-		case err := <-w.destinationErrChan:
+		case destErr := <-w.destinationErrChan:
 			log.Printf(
-				"received error on worker -> destination error channel for tunnel id %d, err: %s",
+				"received error on worker -> destination %q error channel for tunnel id %d, "+
+					"err: %s",
+				destErr.name,
 				w.segment.ID,
-				err,
+				destErr.err,
 			)
 
-			w.errChan <- err
+			if w.retry {
+				// we absolutely cannot block in this method, so... don't :)
+				go w.restartDestination(destErr.idx)
+			} else {
+				w.errChan <- destErr.err
+			}
 		case err := <-w.interfaceErrChan:
 			log.Printf(
 				"received error on worker <-> interface error channel for tunnel id %d, err: %s",
@@ -131,6 +142,8 @@ func (w *Worker) propagateErrors() {
 				err,
 			)
 
+			// we dont do the retry business here because if there is some issue with the interface
+			// we very likely wont solve it by just re-dialing/binding over and over!
 			w.errChan <- err
 		}
 	}

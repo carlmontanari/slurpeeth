@@ -25,9 +25,10 @@ type manager struct {
 
 	debug bool
 
-	configPath string
-	config     *Config
-	liveReload bool
+	configPath  string
+	config      *Config
+	liveReload  bool
+	workerRetry bool
 
 	// listen address -- defaults to 0.0.0.0.
 	address string
@@ -66,6 +67,7 @@ func GetManager(opts ...Option) (Manager, error) {
 		config: &Config{
 			Segments: []Segment{},
 		},
+		workerRetry:          true,
 		address:              Address,
 		port:                 Port,
 		dialTimeout:          DialTimeout,
@@ -219,7 +221,14 @@ func (m *manager) listenErrors() {
 
 func (m *manager) setupWorkers() error {
 	for _, segmentConfig := range m.config.Segments {
-		worker, err := NewWorker(m.port, m.dialTimeout, segmentConfig, m.errChan, m.debug)
+		worker, err := NewWorker(
+			m.port,
+			m.dialTimeout,
+			segmentConfig,
+			m.errChan,
+			m.workerRetry,
+			m.debug,
+		)
 		if err != nil {
 			return err
 		}

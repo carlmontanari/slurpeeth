@@ -46,3 +46,35 @@ dev:
         excludeFile: .gitignore
     terminal:
       command: .develop/start.sh
+
+profiles:
+  - name: multi-pod
+    patches:
+      - op: replace
+        path: deployments.slurpeeth.kubectl.manifests[0]
+        value: manifest-multi-pod.yaml
+      - op: replace
+        path: dev
+        value:
+          slurpeeth-dev-a:
+            labelSelector:
+              slurpeeth: slurpeeth-dev-a
+            container: slurpeeth
+            devImage: ${DEV_IMAGE}
+            sync:
+              - path: ../.develop/:/slurpeeth/.develop/
+                disableDownload: true
+              - path: ../:/slurpeeth/
+                disableDownload: true
+                excludeFile: .gitignore
+          slurpeeth-dev-b:
+            labelSelector:
+              slurpeeth: slurpeeth-dev-b
+            container: slurpeeth
+            devImage: ${DEV_IMAGE}
+            sync:
+              - path: ../.develop/:/slurpeeth/.develop/
+                disableDownload: true
+              - path: ../:/slurpeeth/
+                disableDownload: true
+                excludeFile: .gitignore

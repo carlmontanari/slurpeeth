@@ -61,3 +61,17 @@ func WithDebug(b bool) Option {
 		return nil
 	}
 }
+
+// WithWorkerRetry sets the retry flavor for workers -- especially with respect to dialing their
+// destinations. When worker retry is true, the worker will handle any errors by closing and
+// re-dialing a destination; conversely, when false, the worker will simply propagate the errors up
+// to the manager which will result in a panic. The default behavior is to retry connections which
+// can lead to slurpeeth never failing and just retrying over and over (which is maybe what you
+// want, or maybe not!).
+func WithWorkerRetry(b bool) Option {
+	return func(m *manager) error {
+		m.workerRetry = b
+
+		return nil
+	}
+}

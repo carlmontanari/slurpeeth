@@ -1,0 +1,10 @@
+---
+name: slurpeeth
+
+topology:
+  nodes:
+    node-a:
+      kind: linux
+      image: debian:bookworm-slim
+  links:
+    - endpoints: ["node-a:eth1","host:node-a-eth1"]

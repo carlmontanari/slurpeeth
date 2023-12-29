@@ -8,15 +8,28 @@ import (
 )
 
 type destinationWorker struct {
-	name         string
-	sendChan     chan *Message
-	shutdownChan chan bool
-	conn         net.Conn
+	name           string
+	idx            int
+	dialRetryCount int
+	sendChan       chan *Message
+	shutdownChan   chan bool
+	conn           net.Conn
+}
+
+func (w *Worker) restartDestination(idx int) {
+	log.Printf(
+		"destination %q for tunnel id %d received restart request",
+		w.destinations[idx].name,
+		w.segment.ID,
+	)
+
+	w.shutdownDestination(idx)
+	w.runDestination(idx)
 }
 
 func (w *Worker) shutdownDestination(idx int) {
 	log.Printf(
-		"destination %q for tunnel id %d received shutdown",
+		"destination %q for tunnel id %d received shutdown request",
 		w.destinations[idx].name,
 		w.segment.ID,
 	)
@@ -59,11 +72,35 @@ func (w *Worker) runDestination(idx int) {
 
 	c, err := w.runDestinationDialRetry(w.destinations[idx].name)
 	if err != nil {
-		w.destinationErrChan <- err
+		w.destinations[idx].dialRetryCount++
+
+		if w.retry {
+			dialRetrySleepSeconds := w.destinations[idx].dialRetryCount
+			if dialRetrySleepSeconds > maxDialRetrySleepSeconds {
+				dialRetrySleepSeconds = maxDialRetrySleepSeconds
+			}
+
+			log.Printf(
+				"sleeping %d seconds before attempting to dial destination %q again...",
+				dialRetrySleepSeconds,
+				w.destinations[idx].name,
+			)
+
+			time.Sleep(time.Duration(dialRetrySleepSeconds) * time.Second)
+
+			w.runDestination(idx)
+		} else {
+			w.destinationErrChan <- destinationError{
+				idx:  idx,
+				name: w.destinations[idx].name,
+				err:  err,
+			}
+		}
 
 		return
 	}
 
+	w.destinations[idx].dialRetryCount = 0
 	w.destinations[idx].conn = c
 
 	w.runDestinationHandler(idx)
@@ -136,6 +173,14 @@ func (w *Worker) runDestinationHandler(idx int) {
 				return
 			}
 
+			if w.destinations[idx].conn == nil {
+				// connection was closed but the worker itself isnt shutting down -- this can
+				// happen when/if a destination goes down, so in that case we just want to be done
+				// with this particular handler loop -- a new one will be spawned when/if the
+				// destination is once again reachable
+				return
+			}
+
 			n, err := w.destinations[idx].conn.Write(msg.Output())
 			if err != nil {
 				log.Printf(
@@ -145,7 +190,11 @@ func (w *Worker) runDestinationHandler(idx int) {
 					err,
 				)
 
-				w.destinationErrChan <- err
+				w.destinationErrChan <- destinationError{
+					idx:  idx,
+					name: w.destinations[idx].name,
+					err:  err,
+				}
 
 				continue
 			}

@@ -1,0 +1,8 @@
+---
+segments:
+  - name: pod-b
+    id: 1
+    interfaces:
+      - node-b-eth1
+    destinations:
+      - slurpeeth-dev-a.slurpeeth.svc.cluster.local

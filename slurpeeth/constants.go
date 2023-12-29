@@ -32,6 +32,7 @@ const (
 )
 
 const (
-	dialRetryDelay     = 500 * time.Millisecond
-	shutdownCheckDelay = 10 * time.Millisecond
+	dialRetryDelay           = 500 * time.Millisecond
+	shutdownCheckDelay       = 10 * time.Millisecond
+	maxDialRetrySleepSeconds = 60
 )

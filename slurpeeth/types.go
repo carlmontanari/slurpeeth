@@ -29,3 +29,9 @@ type Segment struct {
 
 // Bytes is a slice of bytes.
 type Bytes []byte
+
+type destinationError struct {
+	idx  int
+	name string
+	err  error
+}

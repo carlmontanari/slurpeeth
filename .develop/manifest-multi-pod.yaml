@@ -1,0 +1,87 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: slurpeeth-dev-a
+  labels:
+    slurpeeth: slurpeeth-dev-a
+spec:
+  selector:
+    matchLabels:
+      slurpeeth: slurpeeth-dev-a
+  template:
+    metadata:
+      labels:
+        slurpeeth: slurpeeth-dev-a
+    spec:
+      containers:
+        - name: slurpeeth
+          image: busybox:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 4799
+          env:
+            - name: LAST_OCTET
+              value: "1"
+            - name: NODE_LETTER
+              value: "a"
+          securityContext:
+            privileged: true
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: slurpeeth-dev-a
+spec:
+  ports:
+    - name: slurpeeth
+      protocol: TCP
+      port: 4799
+      targetPort: 4799
+  selector:
+    slurpeeth: slurpeeth-dev-a
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: slurpeeth-dev-b
+  labels:
+    slurpeeth: slurpeeth-dev-b
+spec:
+  selector:
+    matchLabels:
+      slurpeeth: slurpeeth-dev-b
+  template:
+    metadata:
+      labels:
+        slurpeeth: slurpeeth-dev-b
+    spec:
+      containers:
+        - name: slurpeeth
+          image: busybox:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 4799
+          env:
+            - name: LAST_OCTET
+              value: "2"
+            - name: NODE_LETTER
+              value: "b"
+          securityContext:
+            privileged: true
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: slurpeeth-dev-b
+spec:
+  ports:
+    - name: slurpeeth
+      protocol: TCP
+      port: 4799
+      targetPort: 4799
+  selector:
+    slurpeeth: slurpeeth-dev-b

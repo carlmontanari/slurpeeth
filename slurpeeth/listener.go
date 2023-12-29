@@ -91,7 +91,7 @@ func (l *Listener) Run() {
 }
 
 func (l *Listener) handle(conn net.Conn) {
-	log.Printf("received new connection from %s", conn.RemoteAddr())
+	log.Printf("received new connection from %q", conn.RemoteAddr())
 
 	for {
 		m, err := NewMessageFromConn(conn)
@@ -102,15 +102,23 @@ func (l *Listener) handle(conn net.Conn) {
 						" exiting handler for this connection...",
 				)
 
-				return
+				break
 			}
 
 			// something other than EOF we dunno how to handle for now and is probably bad
 			l.errChan <- err
 
-			return
+			break
 		}
 
 		go l.messageRelay(m.Header.ID, &m)
+	}
+
+	err := conn.Close()
+	if err != nil {
+		log.Printf(
+			"encountered error closing connection from %q, will ignore. error: %s",
+			conn.RemoteAddr(), err,
+		)
 	}
 }
