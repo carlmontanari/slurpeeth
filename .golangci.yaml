@@ -18,10 +18,6 @@ linters-settings:
     alias:
       - pkg: github.com/carlmontanari/slurpeeth/slurpeeth
         alias: ""
-      - pkg: github.com/carlmontanari/slurpeeth/(\w+)
-        alias: slurpeeth$1
-      - pkg: github.com/carlmontanari/slurpeeth/(\w+)/(\w+)
-        alias: slurpeeth$1$2
   lll:
     line-length: 100
     tab-width: 4
@@ -123,11 +119,6 @@ issues:
     - linters:
         - revive
       text: "package-comments"
-
-    # TODO -- temp
-    - linters:
-        - forbidigo
-      text: "use of `fmt.Println` forbidden by pattern"
 
 run:
   go: '1.21'

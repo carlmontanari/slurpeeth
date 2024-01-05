@@ -4,7 +4,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"log"
-	"net"
 	"syscall"
 )
 
@@ -34,7 +33,7 @@ func newInterfaceWorker(segmentName, interfaceName string) (interfaceWorker, err
 		sender,
 	)
 
-	namedInterface, err := net.InterfaceByName(interfaceName)
+	namedInterface, err := interfaceByNameOrAlias(interfaceName)
 	if err != nil {
 		return interfaceWorker{}, err
 	}
