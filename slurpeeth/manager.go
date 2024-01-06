@@ -58,7 +58,7 @@ func GetManager(opts ...Option) (Manager, error) {
 		return managerInst, nil
 	}
 
-	ctx, ctxCancel := SignalHandledContext(log.Fatalf)
+	ctx, ctxCancel := SignalHandledContext(log.Printf)
 
 	m := &manager{
 		ctx:        ctx,
