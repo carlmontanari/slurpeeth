@@ -34,26 +34,42 @@ func NewMessageFromConn(conn net.Conn) (Message, error) {
 		return Message{}, err
 	}
 
-	rawBodyBytes := make(Bytes, h.Size)
+	var totalBodyReadN int
 
-	rawBodyReadN, err := conn.Read(rawBodyBytes)
-	if err != nil {
-		return Message{}, err
+	rawBodyBytes := make(Bytes, 0)
+
+	for {
+		var rawBodyReadN int
+
+		rawBodyReadyBytes := make(Bytes, h.Size)
+
+		rawBodyReadN, err = conn.Read(rawBodyReadyBytes)
+		if err != nil {
+			return Message{}, err
+		}
+
+		rawBodyBytes = append(rawBodyBytes, rawBodyReadyBytes[:rawBodyReadN]...)
+
+		totalBodyReadN += rawBodyReadN
+
+		totalBodyReadNUint16 := uint16(totalBodyReadN)
+
+		if totalBodyReadNUint16 == h.Size {
+			return Message{
+				Header: h,
+				Body:   rawBodyBytes,
+			}, nil
+		}
+
+		if totalBodyReadNUint16 > h.Size {
+			return Message{}, fmt.Errorf(
+				"%w: read %d bytes, but thought we should read %d",
+				ErrMessage,
+				rawBodyReadN,
+				h.Size,
+			)
+		}
 	}
-
-	if uint16(rawBodyReadN) != h.Size {
-		return Message{}, fmt.Errorf(
-			"%w: read %d bytes, but thought we should read %d",
-			ErrMessage,
-			rawBodyReadN,
-			h.Size,
-		)
-	}
-
-	return Message{
-		Header: h,
-		Body:   rawBodyBytes,
-	}, nil
 }
 
 // Message is a message to/from slurpeeth endpoints.

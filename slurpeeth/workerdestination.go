@@ -4,7 +4,10 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"syscall"
 	"time"
+
+	"golang.org/x/sys/unix"
 )
 
 type destinationWorker struct {
@@ -117,7 +120,46 @@ func (w *Worker) runDestinationDialRetry(destination string) (net.Conn, error) {
 	var retries int
 
 	for {
-		c, err := net.Dial(TCP, addr)
+		d := &net.Dialer{
+			Control: func(network, address string, conn syscall.RawConn) error {
+				var opErr error
+
+				err := conn.Control(func(fd uintptr) {
+					// ensure we set the ip header -> "may fragment"
+					// https://stackoverflow.com/questions/973439/ \
+					//   how-to-set-the-dont-fragment-df-flag-on-a-socket
+					opErr = syscall.SetsockoptInt(
+						int(fd),
+						unix.IPPROTO_IP,
+						unix.IP_MTU_DISCOVER,
+						unix.IP_PMTUDISC_DONT,
+					)
+				})
+				if err != nil {
+					return fmt.Errorf(
+						"%w: failed setting may fragment socket option"+
+							" for tunnel id %d, error: %s",
+						ErrConnectivity,
+						w.segment.ID,
+						err,
+					)
+				}
+
+				if opErr != nil {
+					return fmt.Errorf(
+						"%w: failed setting may fragment socket option"+
+							" for tunnel id %d, error: %s",
+						ErrConnectivity,
+						w.segment.ID,
+						opErr,
+					)
+				}
+
+				return nil
+			},
+		}
+
+		c, err := d.Dial(TCP, addr)
 		if err == nil {
 			log.Printf(
 				"dial destination %q succeeded on attempt %d for tunnel id %d",

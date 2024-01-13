@@ -12,6 +12,7 @@ RUN set -x && apt-get update -y && DEBIAN_FRONTEND=noninteractive apt-get instal
             vim \
             inetutils-ping binutils \
             iproute2 \
+            tcpdump \
             net-tools && \
     rm -rf /var/lib/apt/lists/*
 

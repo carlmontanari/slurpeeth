@@ -14,6 +14,16 @@ spec:
       labels:
         slurpeeth: slurpeeth-dev-a
     spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: slurpeeth
+                    operator: In
+                    values:
+                      - slurpeeth-dev-b
+              topologyKey: kubernetes.io/hostname
       containers:
         - name: slurpeeth
           image: busybox:latest
@@ -58,6 +68,16 @@ spec:
       labels:
         slurpeeth: slurpeeth-dev-b
     spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: slurpeeth
+                    operator: In
+                    values:
+                      - slurpeeth-dev-a
+              topologyKey: kubernetes.io/hostname
       containers:
         - name: slurpeeth
           image: busybox:latest

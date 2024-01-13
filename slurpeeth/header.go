@@ -21,12 +21,16 @@ type Header struct {
 func (h *Header) parse() error {
 	id, err := paddedBytesToUint16(h.Body[0:5])
 	if err != nil {
-		return fmt.Errorf("%w: failed to parse tunnel id from header", ErrMessage)
+		return fmt.Errorf("%w: failed to parse tunnel id from header, error: %w", ErrMessage, err)
 	}
 
 	size, err := paddedBytesToUint16(h.Body[5:10])
 	if err != nil {
-		return fmt.Errorf("%w: failed to parse payload size from header", ErrMessage)
+		return fmt.Errorf(
+			"%w: failed to parse payload size from header, error: %w",
+			ErrMessage,
+			err,
+		)
 	}
 
 	h.ID = id

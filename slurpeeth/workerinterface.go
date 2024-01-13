@@ -166,9 +166,9 @@ func (w *Worker) runInterfaceRead(idx int) {
 				return
 			}
 
-			message := NewMessageFromBody(w.segment.ID, w.interfaces[idx].sender, data[:readN])
+			msg := NewMessageFromBody(w.segment.ID, w.interfaces[idx].sender, data[:readN])
 
-			w.destinationFanoutChan <- &message
+			w.destinationFanoutChan <- &msg
 		}
 	}
 }
@@ -199,8 +199,15 @@ func (w *Worker) runInterfaceWrite(idx int) {
 
 			if w.debug {
 				log.Printf(
-					"wrote %d bytes to interface %q for tunnel id %d, message came from sender %q",
-					msg.Header.Size, w.interfaces[idx].name, w.segment.ID, msg.Header.Sender,
+					"wrote %d (expected to write %d) bytes to interface %q for tunnel id %d, "+
+						"message came from sender %q",
+					len(
+						msg.Body,
+					),
+					msg.Header.Size,
+					w.interfaces[idx].name,
+					w.segment.ID,
+					msg.Header.Sender,
 				)
 			}
 		}
