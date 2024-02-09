@@ -2,9 +2,13 @@ package slurpeeth
 
 import (
 	"crypto/sha256"
+	"encoding/binary"
 	"encoding/hex"
 	"log"
 	"syscall"
+	"unsafe"
+
+	"golang.org/x/sys/unix"
 )
 
 type interfaceWorker struct {
@@ -121,6 +125,18 @@ func (w *Worker) bindInterface(idx int) error {
 		return err
 	}
 
+	// tell the kernel we want the packet aux data (that has vlan info)
+	err = syscall.SetsockoptInt(fd, syscall.SOL_PACKET, PacketAuxData, 1)
+	if err != nil {
+		log.Printf(
+			"encountered error setting PACKET_AUX_DATA request for socket for"+
+				" interface %s, err: %s",
+			w.interfaces[idx].name, err,
+		)
+
+		return err
+	}
+
 	log.Printf(
 		"begin worker bind for interface %s for tunnel id %d complete!",
 		w.interfaces[idx].name,
@@ -153,8 +169,9 @@ func (w *Worker) runInterfaceRead(idx int) {
 			}
 
 			data := make([]byte, ReadSize)
+			auxData := make([]byte, syscall.CmsgLen(AuxReadSize))
 
-			readN, _, err := syscall.Recvfrom(w.interfaces[idx].fd, data, 0)
+			readN, auxReadN, _, _, err := syscall.Recvmsg(w.interfaces[idx].fd, data, auxData, 0)
 			if err != nil {
 				log.Printf(
 					"encountered error receiving from interface %q for tunnel id %d, err: %s",
@@ -166,7 +183,53 @@ func (w *Worker) runInterfaceRead(idx int) {
 				return
 			}
 
-			msg := NewMessageFromBody(w.segment.ID, w.interfaces[idx].sender, data[:readN])
+			data = data[:readN]
+
+			// we have to get the "aux" data from the kernel for our socket -- these socket control
+			// messages hold vlan tag info we may have to re-add back to the data we slurped up.
+			// very useful so post about this stuff since this is all a bit of dark magic!
+			// https://stackoverflow.com/questions/56653023/ \
+			//	reading-vlan-field-of-a-raw-ethernet-packet-in-python
+			controlMsgs, err := syscall.ParseSocketControlMessage(auxData[:auxReadN])
+			if err != nil {
+				log.Printf(
+					"encountered error procesing socket control message(s) from interface %q"+
+						" for tunnel id %d, err: %s",
+					w.interfaces[idx].name, w.segment.ID, err,
+				)
+
+				w.interfaceErrChan <- err
+
+				return
+			}
+
+			for _, controlMsg := range controlMsgs {
+				if controlMsg.Header.Level == syscall.SOL_PACKET &&
+					controlMsg.Header.Type == PacketAuxData {
+					parsedAuxData := (*frameAuxData)(
+						unsafe.Pointer(&controlMsg.Data[0]), //nolint:gosec
+					)
+
+					if parsedAuxData.vlanTCI != 0 ||
+						parsedAuxData.status&unix.TP_STATUS_VLAN_VALID == 1 {
+						var taggedData []byte
+
+						vlanTag := make([]byte, VlanTagSize)
+
+						// pack our tag stuff into the bytes
+						binary.BigEndian.PutUint16(vlanTag[0:], parsedAuxData.vlanTPID)
+						binary.BigEndian.PutUint16(vlanTag[2:], parsedAuxData.vlanTCI)
+
+						taggedData = append(taggedData, data[:12]...)
+						taggedData = append(taggedData, vlanTag...)
+						taggedData = append(taggedData, data[12:]...)
+
+						data = taggedData
+					}
+				}
+			}
+
+			msg := NewMessageFromBody(w.segment.ID, w.interfaces[idx].sender, data)
 
 			w.destinationFanoutChan <- &msg
 		}

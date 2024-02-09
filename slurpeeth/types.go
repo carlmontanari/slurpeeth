@@ -35,3 +35,13 @@ type destinationError struct {
 	name string
 	err  error
 }
+
+type frameAuxData struct {
+	status   uint32
+	len      uint32
+	snapLen  uint32
+	mac      uint16
+	net      uint16
+	vlanTCI  uint16
+	vlanTPID uint16
+}
